@@ -1,20 +1,40 @@
 import json
+import os
 import pandas as pd
 import requests
+import validators
 
-if __name__ == "__main__":
-    print("Starting...")
-    components_df = pd.read_csv("https://github.com/qmetric/data-team-coding-exercise/blob/main/data/components.csv"
-                                "?raw=true")
 
-    components = json.loads(components_df.to_json(orient="records"))
+def main():
+    csv_location = "https://github.com/qmetric/data-team-coding-exercise/blob/main/data/components.csv?raw=true"
+    json_location = "https://github.com/qmetric/data-team-coding-exercise/blob/main/data/orders.json.txt?raw=true"
 
-    response = requests.get("https://github.com/qmetric/data-team-coding-exercise/blob/main/data/orders.json.txt"
-                            "?raw=true")
+    #csv_location = "../data/components.csv"
+    #json_location = "../data/orders.json.txt"
 
-    response_format = response.text.replace('}\n{', '},\n{')
+    csv_valid_url = validators.url(csv_location)
+    csv_valid_file  = os.path.isfile(csv_location)
 
-    orders = json.loads("[%s]" % response_format)
+    json_valid_url = validators.url(json_location)
+    json_valid_file = os.path.isfile(json_location)
+
+    components = []
+
+    if csv_valid_url or csv_valid_file:
+        components_df = pd.read_csv(csv_location)
+
+        components = json.loads(components_df.to_json(orient="records"))
+
+    data = ""
+
+    if json_valid_url:
+        data = requests.get(json_location).text
+    elif json_valid_file:
+        data = open(json_location).read()
+
+    data_format = data.replace('}\n{', '},\n{')
+
+    orders = json.loads("[%s]" % data_format)
 
     totals = {}
 
@@ -28,5 +48,11 @@ if __name__ == "__main__":
             print(component['colour'] + ": " + str(totals[component['componentId']]))
         else:
             print(component['colour'] + ": 0")
+
+
+if __name__ == "__main__":
+    print("Starting...")
+
+    main()
 
     print("Finished!")
